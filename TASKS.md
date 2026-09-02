@@ -11,7 +11,7 @@ note on what actually shipped, so a cold reader can tell what is real.
 
 ## Status
 
-**Now:** review findings worked through. Remaining: git history, the video, submission.
+**Now:** repo published, demo recorded. Remaining: the submission post itself.
 **Test count:** 1,063 assertions across nine suites, all passing.
 **Blocked on nothing.**
 **Open questions for the user:** listed at the bottom.
@@ -82,7 +82,7 @@ note on what actually shipped, so a cold reader can tell what is real.
 - [x] README — problem-first, architecture diagram, measured numbers, honest limits
 - [x] Architecture diagrams — Mermaid in `docs/architecture.md`
 - [x] `scripts/demo.sh` — the demo as a reproducible script (`--slow` for recording)
-- [ ] Demo video (target 45s) — record from `scripts/demo.sh`
+- [x] Demo video — https://youtu.be/uoZdfchqyek (recorded from `scripts/demo.sh --video`)
 - [ ] Quote-repost + survey + follow/repost
 
 ---

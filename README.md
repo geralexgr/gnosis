@@ -9,6 +9,12 @@ repeat it.**
 
 Built for the Binance Agent OS Mini Hackathon — Track A.
 
+### ▶ [Watch the demo](https://youtu.be/uoZdfchqyek)
+
+It opens on a trader with *no* planted problem, where the tool looks and says
+nothing — that beat is the claim. Then a book with habits planted in it, and
+both directions of the pre-trade gate.
+
 ![How Gnosis works](docs/brand/pipeline.svg)
 
 ---
@@ -593,8 +599,11 @@ ANTHROPIC_API_KEY=... ./gnosis card corpus/demo-account.csv --narrate
 
 ### Seeing it work
 
+The [recorded demo](https://youtu.be/uoZdfchqyek) is this script running:
+
 ```bash
 ./scripts/demo.sh                 # the whole demo, five beats     (~1 min)
+./scripts/demo.sh --video         # paced for recording, small corpus (~45 s)
 ./scripts/demo.sh --slow          # same, paced for screen recording
 python3 scripts/inspect_csv.py my-export.csv   # diagnose a CSV     (instant)
 python3 scripts/make_report.py corpus/demo-account.csv --out report.html
