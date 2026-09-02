@@ -632,7 +632,6 @@ the single most important caveat in this document and it is explained in
 |---|---|
 | [`docs/architecture.md`](docs/architecture.md) | Data flow, the gate sequence, and the round-trip state machine, as diagrams |
 | [`SKILL.md`](SKILL.md) | The agent-facing skill: trigger phrases, intent→command routing, and when *not* to use it |
-| [`TASKS.md`](TASKS.md) | The build tracker, including a changelog of every defect found and fixed |
 | [`corpus/README.md`](corpus/README.md) | What the fictional demo account is and why it exists |
 
 ## Binance Agent OS integration
