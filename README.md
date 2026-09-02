@@ -9,6 +9,12 @@ repeat it.**
 
 Built for the Binance Agent OS Mini Hackathon — Track A.
 
+### ▶ [Watch the demo](https://youtu.be/uoZdfchqyek)
+
+It opens on a trader with *no* planted problem, where the tool looks and says
+nothing — that beat is the claim. Then a book with habits planted in it, and
+both directions of the pre-trade gate.
+
 ![How Gnosis works](docs/brand/pipeline.svg)
 
 ---
@@ -548,6 +554,103 @@ And then, on the real export, Gnosis declined to profile at all: fewer than thir
 over a multi-year span is below its own bar, so it said so and stopped. That is the
 intended behaviour and it is worth more than a card would have been.
 
+### Every defect found during the build
+
+Collapsed because it is long, not because it is buried — the argument for
+trusting the numbers above is partly that this list exists and is specific.
+
+<details>
+<summary><b>Four reviewers, nine confirmed code defects, and the ones that were self-inflicted</b> (click to expand)</summary>
+
+Late in the build the project was put in front of four hostile reviewers — a
+judge scoring it as a submission, an adversarial code reviewer, a cold
+first-time user, and a statistician. Everything below was found by one of them,
+or by real data, and fixed. Nothing here was found by the test suite passing.
+
+**Nine defects from the code review**
+
+1. **`reconstruct_realised` crashed** (`IndexError`) on any book that sold out
+   cleanly — one buy and one sell. It is the *default* path for spot books. No
+   test caught it because every fixture left base-asset fee residue, which is
+   exactly the assumption the dust logic exists to say you cannot rely on.
+2. **Realised mode silently inverted shorts.** Its docstring claimed unmatched
+   sells were skipped; instead it re-paired a short's cover against the next
+   short's open. Three profitable shorts read as a loss, with hold times
+   inflated roughly fiftyfold — feeding the detector whose entire metric is
+   hold time.
+3. **The dust sweep destroyed real positions.** The threshold was a fraction of
+   *cumulative* opened quantity, so after fifty adds a deliberate scale-out was
+   swept away as "dust". Now a fraction of the closing fill, restricted to
+   unleveraged venues. PnL conservation over random futures streams went from
+   5/300 violations to **0/300**.
+4. **`Disposition.cost` was circular** — it reported the sum of every losing
+   trade, a metric summed over an arm selected *by* that metric. Guaranteed
+   negative, guaranteed to be the largest number on the card, and it displaced
+   findings that had real counterfactuals behind them. Now `None`: the
+   asymmetry is measurable, its cost is not computable from fills, and the
+   field exists to say so.
+5. **`Revenge` was a biased estimator** — it selected its slice on trade *size*
+   and compared on *dollar* PnL. On null traders with no post-loss behaviour at
+   all it called 61% of them negative. Now compares on percentage return, at a
+   cost of twelve points of recall.
+6. **The gate and the profile disagreed about "your usual size"**
+   (`sorted()[n//2]` versus a true median), violating an invariant stated in
+   the gate's own comments.
+7. **`_analogue`'s complement was O(n²) and wrong** — `t not in matched`
+   compared eighteen dataclass fields per pair, and field-identical trips
+   compare equal, so the complement dropped trades it should have kept.
+8. `n_partial_exits` counted the closing sale on dust-closed trips.
+9. Realised-mode `n_adds_underwater` measured against the first lot's price
+   rather than the running average, giving one field two meanings depending on
+   which reconstructor produced it.
+
+**Three the first real export exposed**, none of which a synthetic corpus could
+have — it agrees with whatever model produced it. Dust making spot positions
+immortal, flat-to-flat being the wrong trade unit for spot, and stablecoin
+conversions dominating the baseline. All three are described in
+[What a real export changed](#what-a-real-export-changed).
+
+**Ten in the CSV parser**, found by hostile-input testing: truncated rows
+silently booking fee-free fills, `1e400` becoming `inf` and poisoning every
+average, scientific notation rejected outright (which would have refused every
+SHIB-class fill), UTF-16 exports unreadable, bare-CR line endings crashing the
+reader.
+
+**And the self-inflicted ones**, which are the most useful to record:
+
+- **The false-positive rate was published as 0.00% and was not.** At 100 twins
+  it read 0.00%; at 200 twins the same code measured 7.5%. After the causes
+  were fixed, 75 twins again read 0.00% and 280 read 2.50%. Any
+  false-positive figure measured on a small sample should be assumed to be an
+  underestimate — including one measured an hour earlier.
+- **A contract was documented and not enforced.** `detectors/base.py` states
+  that a `weak` finding never surfaces on its own; one detector returned one
+  unconditionally and the card rendered it anyway.
+- **The eval scored the raw detectors rather than the real `Profile`**, so it
+  had been measuring findings no user would ever see.
+- **The pre-trade gate did no significance testing at all** while the detectors
+  were bootstrap-gated and family-corrected. On clean traders with no planted
+  leak it returned a strong verdict on 19 of 24 neutral proposals. The
+  astrology had simply moved downstream.
+- **The counterfactuals triple-counted** in the flagship output — three rules
+  summing to +35,150 against a book that lost 11,577.
+- **`gnosis card` with no arguments printed a confident profile of a trader who
+  does not exist**, in a project whose entire thesis is that it never invents a
+  finding.
+- **CI hardcoded "95.0% recall"** in the job summary whose own header comment
+  said nothing should be taken on faith. It had gone stale by ten points.
+- **The demo script — the video narration — called the fictional demo book "a
+  real Binance futures export."**
+
+**Still owed.** The statistician's audit never completed. The open questions it
+would have pressed are named in [Status](#status): whether Bonferroni applied to
+a confidence-interval bound means what it is being used to mean, and whether
+recall measured against a corpus this project generates is meaningful at all.
+The false-positive rate, measured on traders with nothing planted, is the more
+trustworthy of the two headline numbers for that reason.
+
+</details>
+
 ### Detectors
 
 | Detector | What it catches |
@@ -593,8 +696,11 @@ ANTHROPIC_API_KEY=... ./gnosis card corpus/demo-account.csv --narrate
 
 ### Seeing it work
 
+The [recorded demo](https://youtu.be/uoZdfchqyek) is this script running:
+
 ```bash
 ./scripts/demo.sh                 # the whole demo, five beats     (~1 min)
+./scripts/demo.sh --video         # paced for recording, small corpus (~45 s)
 ./scripts/demo.sh --slow          # same, paced for screen recording
 python3 scripts/inspect_csv.py my-export.csv   # diagnose a CSV     (instant)
 python3 scripts/make_report.py corpus/demo-account.csv --out report.html
@@ -623,7 +729,6 @@ the single most important caveat in this document and it is explained in
 |---|---|
 | [`docs/architecture.md`](docs/architecture.md) | Data flow, the gate sequence, and the round-trip state machine, as diagrams |
 | [`SKILL.md`](SKILL.md) | The agent-facing skill: trigger phrases, intent→command routing, and when *not* to use it |
-| [`TASKS.md`](TASKS.md) | The build tracker, including a changelog of every defect found and fixed |
 | [`corpus/README.md`](corpus/README.md) | What the fictional demo account is and why it exists |
 
 ## Binance Agent OS integration
