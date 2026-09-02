@@ -1,0 +1,94 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 900 470" width="900" height="470" font-family="ui-monospace,SFMono-Regular,Menlo,monospace">
+  <style>
+    .bg    { fill: none; }
+    .box   { fill: #8888881a; stroke: #8888887a; stroke-width: 1.2; rx: 6; }
+    .det   { fill: #8888881a; stroke: #8888885a; stroke-width: 1; rx: 4; }
+    .gate  { fill: #d9770622; stroke: #d97706aa; stroke-width: 1.6; rx: 6; }
+    .out   { fill: #05966922; stroke: #059669aa; stroke-width: 1.6; rx: 6; }
+    .kill  { fill: #dc262618; stroke: #dc262688; stroke-width: 1.2; rx: 6; }
+    .t     { fill: #888; font-size: 13px; }
+    .h     { fill: #888; font-size: 13.5px; font-weight: 700; }
+    .s     { fill: #888; font-size: 11px; opacity: .85; }
+    .n     { fill: #888; font-size: 11px; opacity: .7; }
+    .arrow { stroke: #8888889a; stroke-width: 1.4; fill: none; marker-end: url(#a); }
+    .amber { fill: #d97706; }
+    .green { fill: #059669; }
+    .red   { fill: #dc2626; }
+  </style>
+  <defs>
+    <marker id="a" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="6" markerHeight="6" orient="auto">
+      <path d="M0,0 L10,5 L0,10 z" fill="#8888889a"/>
+    </marker>
+  </defs>
+
+  <text x="20" y="26" class="h">Gnosis — arithmetic finds and decides, the model only narrates</text>
+  <text x="20" y="44" class="n">no model is involved in any stage above the amber line</text>
+
+  <!-- sources -->
+  <rect class="box" x="20"  y="64" width="180" height="46"/>
+  <text x="32" y="83" class="t">Binance CSV export</text>
+  <text x="32" y="99" class="s">spot · futures dialects</text>
+
+  <rect class="box" x="20"  y="122" width="180" height="46"/>
+  <text x="32" y="141" class="t">baw wallet / MCP</text>
+  <text x="32" y="157" class="s">on-chain · Agentic sub-acct</text>
+
+  <path class="arrow" d="M200,87 L245,105"/>
+  <path class="arrow" d="M200,145 L245,127"/>
+
+  <!-- normalise -->
+  <rect class="box" x="250" y="90" width="170" height="52"/>
+  <text x="262" y="110" class="t">normalise → Fill</text>
+  <text x="262" y="127" class="s">2 venues, 1 event type</text>
+  <path class="arrow" d="M420,116 L465,116"/>
+
+  <!-- reconstruct -->
+  <rect class="box" x="470" y="82" width="200" height="68"/>
+  <text x="482" y="102" class="t">reconstruct trades</text>
+  <text x="482" y="119" class="s">flat-to-flat  (futures)</text>
+  <text x="482" y="135" class="s">realised sale (spot, FIFO)</text>
+  <path class="arrow" d="M570,150 L570,182"/>
+
+  <!-- detectors -->
+  <rect class="box" x="250" y="186" width="620" height="86"/>
+  <text x="262" y="206" class="t">7 behavioural detectors</text>
+  <text x="262" y="222" class="s">deterministic · each carries the trade ids that prove it</text>
+  <rect class="det" x="262" y="232" width="112" height="26"/><text x="270" y="249" class="n">disposition</text>
+  <rect class="det" x="382" y="232" width="118" height="26"/><text x="390" y="249" class="n">averaging down</text>
+  <rect class="det" x="508" y="232" width="96"  height="26"/><text x="516" y="249" class="n">revenge</text>
+  <rect class="det" x="612" y="232" width="88"  height="26"/><text x="620" y="249" class="n">session</text>
+  <rect class="det" x="708" y="232" width="92"  height="26"/><text x="716" y="249" class="n">leverage</text>
+  <rect class="det" x="808" y="232" width="54"  height="26"/><text x="816" y="249" class="n">+2</text>
+  <path class="arrow" d="M560,272 L560,300"/>
+
+  <!-- significance gate -->
+  <rect class="gate" x="250" y="304" width="400" height="66"/>
+  <text x="262" y="325" class="h">significance gate</text>
+  <text x="262" y="342" class="s">n ≥ 8 per arm · bootstrap CI excludes zero</text>
+  <text x="262" y="358" class="s">corrected across all 13 hypotheses in the profile</text>
+
+  <rect class="kill" x="672" y="304" width="198" height="66"/>
+  <text x="684" y="325" class="t">did not survive</text>
+  <text x="684" y="343" class="s">reported as “insufficient</text>
+  <text x="684" y="359" class="s">data”, and nothing else</text>
+  <path class="arrow" d="M650,337 L668,337"/>
+
+  <path class="arrow" d="M340,370 L340,398"/>
+  <path class="arrow" d="M563,370 L563,398"/>
+
+  <!-- outputs -->
+  <rect class="out" x="250" y="402" width="196" height="52"/>
+  <text x="262" y="422" class="t">Rekt Wrapped card</text>
+  <text x="262" y="439" class="s">the shareable surface</text>
+
+  <rect class="out" x="456" y="402" width="214" height="52"/>
+  <text x="466" y="422" class="t">Elenchos pre-trade gate</text>
+  <text x="466" y="439" class="s">your base rate, quoted back</text>
+
+  <rect class="box" x="682" y="398" width="196" height="60"/>
+  <text x="694" y="422" class="t">model narration</text>
+  <text x="694" y="437" class="s">optional · fact-checked</text>
+  <text x="694" y="451" class="s">off by default</text>
+
+  <line x1="20" y1="386" x2="880" y2="386" stroke="#d97706" stroke-width="1" stroke-dasharray="3 4" opacity="0.5"/>
+</svg>

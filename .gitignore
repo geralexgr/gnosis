@@ -1,0 +1,64 @@
+# Python
+__pycache__/
+*.py[cod]
+*$py.class
+*.so
+.Python
+build/
+dist/
+*.egg-info/
+.eggs/
+pip-wheel-metadata/
+
+# Virtual environments
+.venv/
+venv/
+env/
+ENV/
+
+# Tooling caches
+.ruff_cache/
+.mypy_cache/
+.pytest_cache/
+.coverage
+htmlcov/
+.tox/
+
+# Editors and OS
+.DS_Store
+.idea/
+.vscode/
+*.swp
+*.swo
+*~
+
+# Generated corpora. `evals/score.py` builds these on demand and they are large
+# and reproducible from a seed, so committing them would add weight for nothing.
+corpus/generated/
+!corpus/demo-account.csv
+
+# Gnosis output. These are *someone's trading data* -- a profile, a card, or a
+# report generated from a real export contains their positions and PnL. Ignored
+# by default so an accidental `git add -A` in a working directory cannot publish
+# a user's book.
+profile.json
+report.html
+*-report.html
+gnosis-profile-*.json
+
+# Real trade-history exports. Never commit one. The only CSVs that belong in
+# this repository are the generated demo account and the synthetic test
+# fixtures, both of which are explicitly re-included below.
+*.csv
+!corpus/demo-account.csv
+!tests/fixtures/*.csv
+
+# Credentials. Nothing here should ever exist, but an ignored file cannot be
+# committed by accident.
+.env
+.env.*
+*.key
+*.pem
+openapi-key
+.openclaw/
+secrets.env
