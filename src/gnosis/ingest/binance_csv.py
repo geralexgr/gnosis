@@ -575,6 +575,11 @@ _DELIMITERS = (",", ";", "\t")
 _FIELD_LIMIT = 10 * 1024 * 1024
 
 
+# C0 controls that are never data and can break the reader outright. Tab,
+# carriage return and newline are excluded -- those are structure.
+_CONTROL_RE = re.compile(r"[\x00-\x08\x0b\x0c\x0e-\x1f]")
+
+
 def _lines(text: str) -> io.StringIO:
     """The file, split the way `csv` needs it split.
 
@@ -583,7 +588,17 @@ def _lines(text: str) -> io.StringIO:
     and `csv` then dies with "new-line character seen in unquoted field") and
     rewrites a CRLF that lives *inside* a quoted field. The empty string is the
     setting the csv module's own documentation asks for.
+
+    NUL is stripped here, before the reader sees it, rather than per-cell with
+    the other invisibles. It has to be: on Python 3.10 `csv` raises
+    `_csv.Error: line contains NUL` while parsing the row, so a per-cell scrub
+    never runs. Python 3.11 changed that and tolerates it, which is why this was
+    green locally on 3.13 and red on 3.10 in CI -- and why the version matrix
+    earns its keep. The other C0 controls go too; none of them are ever data in
+    a trade export, and any of them can end a field early.
     """
+    if _CONTROL_RE.search(text):
+        text = _CONTROL_RE.sub("", text)
     return io.StringIO(text, newline="")
 
 
