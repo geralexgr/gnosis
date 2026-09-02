@@ -1,0 +1,181 @@
+name: verify
+
+# The point of this workflow is that nobody has to take the README's word for it.
+# Every run re-derives the recall and false-positive numbers from the corpus and
+# writes them into the job summary, so a claim that has quietly stopped being true
+# shows up as a changed number rather than as stale prose.
+#
+# There is deliberately no dependency installation step: the deterministic layer
+# (ingest, round-trips, detectors, statistics, card, gate) is stdlib-only, and a CI
+# run that needs pip would be evidence that it no longer is.
+
+on:
+  push:
+  pull_request:
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+concurrency:
+  group: verify-${{ github.workflow }}-${{ github.ref }}
+  cancel-in-progress: true
+
+jobs:
+  verify:
+    name: verify (py${{ matrix.python-version }})
+    runs-on: ubuntu-latest
+    timeout-minutes: 20
+
+    strategy:
+      fail-fast: false
+      matrix:
+        # The floor declared in pyproject (requires-python = ">=3.10") and the
+        # current release. If it breaks on either, it is broken.
+        python-version: ["3.10", "3.13"]
+
+    env:
+      PYTHONPATH: src
+      # The eval corpus size used in CI. Smaller than the 40 pairs per leak behind
+      # the README's headline numbers, so that a run finishes in a couple of
+      # minutes; the summary states the size next to the numbers for that reason.
+      CI_TRADERS: 8
+
+    steps:
+      - name: Check out
+        uses: actions/checkout@v4
+
+      - name: Set up Python ${{ matrix.python-version }}
+        uses: actions/setup-python@v5
+        with:
+          python-version: ${{ matrix.python-version }}
+
+      - name: Round-trip reconstruction
+        run: python3 tests/test_roundtrip.py
+
+      - name: Statistics calibration
+        run: python3 tests/test_stats.py
+
+      - name: Remaining suites
+        # Every suite that exists, so the assertion count in the README is the
+        # count CI actually enforces. Guarded by existence so a suite can be
+        # added or removed without breaking the workflow. Run
+        # them when they exist; do not fail the build for their absence, and do
+        # not pass silently once they are here.
+        run: |
+          for suite in tests/test_ingest.py tests/test_agent_layer.py \
+                       tests/test_detectors.py tests/test_robustness.py \
+                       tests/test_integrations.py tests/test_server.py \
+                       tests/test_report.py; do
+            if [ -f "$suite" ]; then
+              echo "::group::$suite"
+              python3 "$suite"
+              echo "::endgroup::"
+            else
+              echo "not present yet, skipping: $suite"
+            fi
+          done
+
+      - name: CLI smoke — card and profile render on every leak type
+        run: |
+          for leak in disposition martingale revenge night overleverage; do
+            python3 -m gnosis.cli card "synthetic:$leak" > /dev/null
+            python3 -m gnosis.cli profile "synthetic:$leak" \
+              | python3 -c "import json,sys; json.load(sys.stdin)"
+            echo "  ok   $leak"
+          done
+          python3 -m gnosis.cli check synthetic:night \
+            --leverage 20 --at 2026-09-01T03:14 --since-loss 41 > /dev/null
+          echo "  ok   check"
+
+      - name: Lint (non-fatal)
+        continue-on-error: true
+        run: |
+          python3 -m pip install --quiet --disable-pip-version-check ruff || {
+            echo "ruff unavailable; skipping lint"; exit 0; }
+          command -v ruff >/dev/null 2>&1 || { echo "ruff not on PATH; skipping"; exit 0; }
+          ruff check . || echo "::warning::ruff reported findings (non-fatal)"
+
+      - name: Score the corpus (recall + false positives)
+        run: |
+          python3 evals/score.py --traders "$CI_TRADERS" | tee eval.txt
+
+      - name: Publish measured numbers to the job summary
+        if: always()
+        run: |
+          if [ ! -s eval.txt ]; then
+            echo "### Corpus scoring did not produce output" >> "$GITHUB_STEP_SUMMARY"
+            exit 0
+          fi
+
+          {
+            echo "## Measured on this run — Python ${{ matrix.python-version }}"
+            echo
+            echo "These numbers are re-derived from the labelled corpus by this job."
+            echo "They are not read from the README."
+            echo
+          } >> "$GITHUB_STEP_SUMMARY"
+
+          # The two headline numbers, pulled out of the eval's own output.
+          #   OVERALL row:  "  OVERALL                    33/40     82.5%"
+          #   twins row:    "  twins with >=1 finding      0/40     0.00%"
+          awk '
+            /^ *OVERALL/                { rec_n = $2; rec_p = $3 }
+            /twins with >=1 finding/    { fp_n  = $5; fp_p  = $6 }
+            /^corpus:/                  { sub(/^corpus: /, ""); corpus = $0 }
+            END {
+              print "| | |"
+              print "|---|---|"
+              printf "| recall (the *correct* detector fired) | **%s** (%s) |\n",
+                     (rec_p == "" ? "n/a" : rec_p), (rec_n == "" ? "?" : rec_n)
+              printf "| false positives on clean twins | **%s** (%s) |\n",
+                     (fp_p == "" ? "n/a" : fp_p), (fp_n == "" ? "?" : fp_n)
+              print ""
+              if (corpus != "") printf "`%s`\n", corpus
+            }
+          ' eval.txt >> "$GITHUB_STEP_SUMMARY"
+
+          {
+            echo
+            echo "### Recall by injected effect size"
+            echo
+            echo "| band | hits | recall |"
+            echo "|---|---|---|"
+          } >> "$GITHUB_STEP_SUMMARY"
+          awk '
+            /^ *(subtle|clear|severe) \(/ {
+              printf "| %s %s | %s | %s |\n", $1, $2, $3, $4
+            }
+          ' eval.txt >> "$GITHUB_STEP_SUMMARY"
+
+          {
+            echo
+            echo "### Per-detector recall"
+            echo
+            echo "| planted leak | detector | hits | recall |"
+            echo "|---|---|---|---|"
+          } >> "$GITHUB_STEP_SUMMARY"
+          awk '
+            /^ *(disposition|martingale|revenge|night|overleverage) +[a-z_]+ +[0-9]+\// {
+              printf "| %s | `%s` | %s | %s |\n", $1, $2, $3, $4
+            }
+          ' eval.txt >> "$GITHUB_STEP_SUMMARY"
+
+          {
+            echo
+            echo "<details><summary>Full eval output</summary>"
+            echo
+            echo '```'
+            cat eval.txt
+            echo '```'
+            echo
+            echo "</details>"
+            echo
+            echo "> The README quotes \`--traders 40\`, a much larger corpus than CI"
+            echo "> runs. Its figures are re-derived by that command, not copied here:"
+            echo "> hardcoding them is how a summary that exists to catch stale claims"
+            echo "> becomes one. CI runs a reduced corpus"
+            echo "> to stay inside a couple of minutes, so recall reads lower here — 8"
+            echo "> pairs per leak is not enough to resolve the subtle effect band. The"
+            echo "> false-positive figure is the one to watch: it should stay at zero."
+          } >> "$GITHUB_STEP_SUMMARY"

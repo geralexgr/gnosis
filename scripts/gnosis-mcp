@@ -1,0 +1,43 @@
+#!/usr/bin/env python3
+"""Entrypoint for the Gnosis MCP server. Speaks JSON-RPC 2.0 over stdio.
+
+An MCP client launches a server as a subprocess with a command and args, and it
+does so from whatever working directory the client happens to have — usually
+the user's home, never the repo. So the one job this file has beyond calling
+`serve()` is to put `src/` on the path *relative to itself*, which is the only
+anchor that survives being launched from somewhere else.
+
+Point a client at it by absolute path:
+
+    {
+      "mcpServers": {
+        "gnosis": {
+          "command": "/abs/path/to/gnosis/scripts/gnosis-mcp"
+        }
+      }
+    }
+
+Or, equivalently, `python3 -m gnosis.server.mcp` with `PYTHONPATH=<repo>/src`.
+
+Nothing this server exposes can place an order, move funds, or post anything;
+see `src/gnosis/server/mcp.py`. It is safe to load alongside an exchange's own
+MCP server, which is the arrangement it is designed for — Gnosis answers
+"should I?" and the exchange answers "can I?".
+
+    ./scripts/gnosis-mcp --tools     # dump the advertised schemas and exit
+    ./scripts/gnosis-mcp             # serve on stdin/stdout
+"""
+
+from __future__ import annotations
+
+import sys
+from pathlib import Path
+
+# Resolved through symlinks, because a client may well be pointed at one on
+# PATH rather than at the file in the checkout.
+sys.path.insert(0, str(Path(__file__).resolve().parents[1] / "src"))
+
+from gnosis.server.mcp import main  # noqa: E402
+
+if __name__ == "__main__":
+    sys.exit(main())

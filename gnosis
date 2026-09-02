@@ -1,0 +1,14 @@
+#!/usr/bin/env bash
+# Run Gnosis without installing it.
+#
+# Gnosis has no dependencies and no install step -- running it from the source
+# tree is the point, since it means a reviewer can clone and run in one command
+# with no pip, no venv and no network. The cost of that choice is PYTHONPATH,
+# and making the user carry it was the most common first failure this project
+# had. So this wrapper carries it instead, and works from any directory.
+#
+#   ./gnosis card corpus/demo-account.csv
+set -euo pipefail
+HERE="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
+export PYTHONPATH="$HERE/src${PYTHONPATH:+:$PYTHONPATH}"
+exec "${PY:-python3}" -m gnosis.cli "$@"
